@@ -1,0 +1,39 @@
+---
+# tasks file for thtong.gocryptfs
+- name: Get gocryptfs release details
+  uri:
+    url: "https://api.github.com/repos/rfjakob/gocryptfs/releases/{{ gocryptfs_version }}"
+    return_content: true
+  register: gocryptfs_release
+
+- name: set gocryptfs_download_info
+  set_fact:
+    gocryptfs_download_info: "{{ gocryptfs_release.json.assets | selectattr('browser_download_url', 'match', '.*linux-static_' + go_arch + '.tar.gz$') | first }}"
+  when: gocryptfs_release is succeeded
+
+- name: debug
+  debug:
+    msg: "{{ gocryptfs_download_info }}"
+    verbosity: 1
+
+- name: Download Gocryptfs
+  get_url:
+    url: "{{ gocryptfs_download_info.browser_download_url }}"
+    dest: "/tmp/"
+    timeout: 300
+    owner: "{{ gocryptfs_user }}"
+    group: "{{ gocryptfs_user }}"
+  retries: 3
+  delay: 2
+  register: gocryptfs_download
+  when: gocryptfs_download_info is defined
+
+- name: Unarchive Gocryptfs
+  unarchive:
+    src: "/tmp/{{ gocryptfs_download_info.name }}"
+    dest: "{{ gocryptfs_bin_dir }}/"
+    remote_src: yes
+    owner: "{{ gocryptfs_user }}"
+    group: "{{ gocryptfs_user }}"
+    include: "{{ gocryptfs_binaries }}"
+  when: gocryptfs_download_info is succeeded
