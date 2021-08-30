@@ -2,8 +2,10 @@
 # tasks file for thtong.gocryptfs
 - name: Get gocryptfs release details
   uri:
-    url: "https://api.github.com/repos/rfjakob/gocryptfs/releases/{{ gocryptfs_version }}"
+    url: "https://api.github.com/repos/rfjakob/gocryptfs/releases/{{ (gocryptfs_version == 'latest') | ternary('latest', 'tags/' + gocryptfs_version) }}"
     return_content: true
+  delegate_to: localhost
+  run_once: yes
   register: gocryptfs_release
 
 - name: set gocryptfs_download_info
